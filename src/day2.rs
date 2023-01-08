@@ -2,33 +2,59 @@ use std::str::FromStr;
 
 #[derive(PartialEq, Copy, Clone, Debug)]
 pub enum Shape {
-    Rock = 1,
-    Paper = 2,
-    Scissors = 3,
+    Rock,
+    Paper,
+    Scissors,
 }
 
-#[derive(Debug)]
-pub struct Matchup(Shape, Shape);
+#[derive(Debug, PartialEq)]
+pub enum Outcome {
+    Loss,
+    Draw,
+    Win,
+}
 
-impl Matchup {
-    // Assume we are self.0, and the opponent is self.1
-    fn get_score(&self) -> u32 {
-        let enemy_throw = self.1 as u32;
-        let our_throw = self.0 as u32;
+impl FromStr for Outcome {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "X" => Ok(Self::Loss),
+            "Y" => Ok(Self::Draw),
+            "Z" => Ok(Self::Win),
+            _ => Err(()),
+        }
+    }
+}
 
-        // Draw
-        if enemy_throw == our_throw {
-            enemy_throw + 3
+impl Shape {
+    fn defeats(self) -> Self {
+        match self {
+            Shape::Rock => Shape::Scissors,
+            Shape::Paper => Shape::Rock,
+            Shape::Scissors => Shape::Paper,
         }
-        // Victory
-        else if (our_throw != 3 && enemy_throw > our_throw)
-            || (enemy_throw == 1 && our_throw == 3)
-        {
-            enemy_throw + 6
+    }
+
+    fn defeated_by(self, opponent: Shape) -> bool {
+        opponent == self.defeats()
+    }
+
+    fn get_outcome(self, opponent: Shape) -> Outcome {
+        if self == opponent {
+            Outcome::Draw
+        } else {
+            match self.defeated_by(opponent) {
+                true => Outcome::Win,
+                false => Outcome::Loss,
+            }
         }
-        // Loss
-        else {
-            enemy_throw
+    }
+
+    fn value(self) -> u32 {
+        match self {
+            Shape::Rock => 1,
+            Shape::Paper => 2,
+            Shape::Scissors => 3,
         }
     }
 }
@@ -45,31 +71,68 @@ impl FromStr for Shape {
     }
 }
 
-#[aoc_generator(day2)]
-pub fn input_generator(input: &str) -> Vec<Matchup> {
-    let split: Vec<_> = input.split_whitespace().collect();
-    let matchups_new: Vec<Matchup> = split
-        .chunks(2)
-        .map(|x| {
-            Matchup(
-                Shape::from_str(x[0]).unwrap(),
-                Shape::from_str(x[1]).unwrap(),
-            )
-        })
-        .collect();
+#[derive(Debug)]
+pub struct Matchup(Shape, Shape);
 
-    matchups_new
+impl Matchup {
+    fn get_score(&self) -> u32 {
+        let enemy_throw = self.0;
+        let our_throw = self.1;
+
+        let outcome = our_throw.get_outcome(enemy_throw);
+        match outcome {
+            Outcome::Loss => our_throw.value(),
+            Outcome::Draw => our_throw.value() + 3,
+            Outcome::Win => our_throw.value() + 6,
+        }
+    }
+}
+
+pub struct GamePlan(Shape, Outcome);
+
+impl GamePlan {
+    fn get_move(&self) -> Shape {
+        let their_throw = self.0;
+        match self.1 {
+            Outcome::Loss => their_throw.defeats(),
+            Outcome::Draw => their_throw,
+            Outcome::Win => their_throw.defeats().defeats(),
+        }
+    }
+}
+
+#[aoc_generator(day2)]
+pub fn input_generator(input: &str) -> Vec<String> {
+    input.split_whitespace().map(|x| x.to_owned()).collect()
 }
 
 #[aoc(day2, part1)]
-pub fn solver_part1(input: &[Matchup]) -> u32 {
-    input.iter().map(|x| x.get_score()).sum()
+pub fn solver_part1(input: &[String]) -> u32 {
+    input
+        .chunks(2)
+        .map(|x| {
+            Matchup(
+                Shape::from_str(&x[0]).unwrap(),
+                Shape::from_str(&x[1]).unwrap(),
+            )
+        })
+        .map(|x| x.get_score())
+        .sum()
 }
 
-/*
 #[aoc(day2, part2)]
-pub fn solver_part2(input: &[Matchup]) -> u32 {
-}*/
+pub fn solver_part2(input: &[String]) -> u32 {
+    input
+        .chunks(2)
+        .map(|x| {
+            GamePlan(
+                Shape::from_str(&x[0]).unwrap(),
+                Outcome::from_str(&x[1]).unwrap(),
+            )
+        })
+        .map(|x| Matchup(x.0, x.get_move()).get_score())
+        .sum()
+}
 
 #[cfg(test)]
 mod tests {

@@ -4,7 +4,7 @@ pub fn input_generator(input: &str) -> Vec<u32> {
         .split("\n\n")
         .into_iter()
         .map(|x| {
-            x.split("\n")
+            x.split('\n')
                 .into_iter()
                 .map(|x| x.parse::<u32>().unwrap_or_default())
                 .reduce(|a, b| a + b)
@@ -16,15 +16,15 @@ pub fn input_generator(input: &str) -> Vec<u32> {
 }
 
 #[aoc(day1, part1)]
-pub fn solver_part1(input: &Vec<u32>) -> u32 {
-    let mut vec = input.clone();
+pub fn solver_part1(input: &[u32]) -> u32 {
+    let mut vec = input.to_owned();
     vec.sort();
     *vec.last().unwrap()
 }
 
 #[aoc(day1, part2)]
-pub fn solver_part2(input: &Vec<u32>) -> u32 {
-    let mut vec = input.clone();
+pub fn solver_part2(input: &[u32]) -> u32 {
+    let mut vec = input.to_owned();
     vec.sort();
     let end = vec.len();
     vec.split_off(end - 3)
