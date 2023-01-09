@@ -13,7 +13,8 @@ pub struct Rucksack {
 impl Rucksack {
     fn get_shared(&self) -> u8 {
         let a_collection = self.side_a.as_bytes();
-        let intersection: Vec<&u8> = self.side_b
+        let intersection: Vec<&u8> = self
+            .side_b
             .as_bytes()
             .iter()
             .filter(|x| a_collection.contains(x))
