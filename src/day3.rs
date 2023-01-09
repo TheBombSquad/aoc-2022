@@ -1,8 +1,8 @@
 fn get_priority(character: u8) -> u8 {
     if character > 97 {
-        return character - 96;
+        character - 96
     } else {
-        return character - 38;
+        character - 38
     }
 }
 
@@ -53,21 +53,21 @@ pub fn input_generator(input: &str) -> Vec<Rucksack> {
 #[aoc(day3, part1)]
 pub fn solver_part1(input: &[Rucksack]) -> u32 {
     input
-        .into_iter()
+        .iter()
         .map(|x| get_priority(x.get_shared()))
-        .map(|x| u32::from(x))
+        .map(u32::from)
         .sum()
 }
 
 #[aoc(day3, part2)]
 pub fn solver_part2(input: &[Rucksack]) -> u32 {
     input
-        .into_iter()
+        .iter()
         .map(|x| x.side_a.clone() + &x.side_b)
         .collect::<Vec<String>>()
         .chunks(3)
         .map(|x| get_priority(get_group_shared(x)))
-        .map(|x| u32::from(x))
+        .map(u32::from)
         .sum()
 }
 

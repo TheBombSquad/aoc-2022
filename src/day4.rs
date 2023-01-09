@@ -18,10 +18,8 @@ impl ElfPair {
         let range_1 = &self.0;
         let range_2 = &self.1;
         !(
-        (range_1.higher_end < range_2.lower_end &&
-        range_2.lower_end > range_1.higher_end) ||
-        (range_2.higher_end < range_1.lower_end &&
-        range_1.lower_end > range_2.higher_end))
+        (range_1.higher_end < range_2.lower_end) ||
+        (range_2.higher_end < range_1.lower_end))
 
     }
 }
