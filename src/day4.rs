@@ -13,6 +13,17 @@ impl ElfPair {
         range_1.lower_end <= range_2.lower_end && range_1.higher_end >= range_2.higher_end ||
         range_2.lower_end <= range_1.lower_end && range_2.higher_end >= range_1.higher_end
     }
+
+    fn any_overlap(&self) -> bool {
+        let range_1 = &self.0;
+        let range_2 = &self.1;
+        !(
+        (range_1.higher_end < range_2.lower_end &&
+        range_2.lower_end > range_1.higher_end) ||
+        (range_2.higher_end < range_1.lower_end &&
+        range_1.lower_end > range_2.higher_end))
+
+    }
 }
 
 #[aoc_generator(day4)]
@@ -42,12 +53,13 @@ pub fn solver_part1(input: &[ElfPair]) -> usize {
         .count()
 }
 
-/*
 #[aoc(day4, part2)]
-pub fn solver_part2(input: &[]) -> () {
-
+pub fn solver_part2(input: &[ElfPair]) -> usize {
+    input
+        .iter()
+        .filter(|x| x.any_overlap())
+        .count()
 }
-*/ 
 
 #[cfg(test)]
 mod tests {
