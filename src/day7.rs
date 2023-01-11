@@ -199,11 +199,23 @@ pub fn solver_part1(input: &[String]) -> u32 {
     result
 }
 
-/*
 #[aoc(day7, part2)]
-pub fn solver_part2(input: &[]) -> () {
+pub fn solver_part2(input: &[String]) -> u32 {
+    const TOTAL_SPACE: u32 = 70_000_000;
+    const NEEDED_SPACE: u32 = 30_000_000;
 
-}*/
+    let root = get_root_directory(input);
+    let borrowed_root = root.borrow();
+
+    let current_free_space = TOTAL_SPACE - borrowed_root.get_total_size();
+    let space_to_free = NEEDED_SPACE - current_free_space;
+
+    println!("current free: {current_free_space:}, space to free: {space_to_free:}");
+    let mut total_sizes_result = Vec::new();
+    let total_sizes_vec = borrowed_root.get_all_total_sizes(&mut total_sizes_result);
+    total_sizes_vec.sort_unstable(); 
+    total_sizes_vec.iter().copied().find(|x| x >= &space_to_free).unwrap()
+}
 
 #[cfg(test)]
 mod tests {
