@@ -1,3 +1,18 @@
+// Day 2: Rock Paper Scissors - https://adventofcode.com/2022/day/2
+//
+// Generator: Just splits the input into lines - we have to parse the input differently depending
+// on the part
+//
+// Part 1: Parses the input into a collection of `Matchup` structs. A `Matchup` struct consists of
+// two `Shapes` (rock, paper, or scissors). The `Matchup` struct is used to obtain a score for a
+// round by determining the outcome of the game when two shapes are played against each other. To
+// determine if a shape beats another shape, we just keep track of what a particular shape defeats
+// (e.g.: rock beats scissors). We can reverse this to determine what a shape loses to.
+//
+// Part 2: Instead of parsing the input into `Matchup` structs, parse it into a tuple containing
+// a shape and a desired outcome. We can use the `defeats()` function to determine what shape is
+// required to be thrown for a particular outcome.
+//
 use std::str::FromStr;
 
 #[derive(PartialEq, Copy, Clone, Debug)]
@@ -42,11 +57,10 @@ impl Shape {
     fn get_outcome(self, opponent: Shape) -> Outcome {
         if self == opponent {
             Outcome::Draw
+        } else if self.defeated_by(opponent) {
+            Outcome::Win
         } else {
-            match self.defeated_by(opponent) {
-                true => Outcome::Win,
-                false => Outcome::Loss,
-            }
+            Outcome::Loss
         }
     }
 

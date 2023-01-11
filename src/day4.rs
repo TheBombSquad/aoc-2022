@@ -1,3 +1,17 @@
+// Day 4: Camp Cleanup - https://adventofcode.com/2022/day/4
+//
+// Generator: Splits the input on commas (one range for each pair), then splits on dashes (for
+// lower and higher end of ranges). Constructs an ElfPair struct for each line that consists of two
+// ranges.
+//
+// Part 1: Check if the second range is entirely contained within the first range, or if the first
+// range is entirely contained within the second range, using four comparisions.
+//
+// Part 2: Check if the higher end of the first range exceeds the lower end of the second range, or
+// if the higher end of the second range exceeds the lower end of the first range, to determine if
+// there is any overlap. In hindsight, I could have checked if the first range contained either of
+// the endpoints of the second range, but that might lead to more comparisions. 
+//
 pub struct Range {
     lower_end: u32,
     higher_end: u32,

@@ -1,3 +1,20 @@
+// Day 3: Rucksack Reorganization  - https://adventofcode.com/2022/day/3
+//
+// Generator: Parses the input into a `Rucksack` struct, splitting the line in half and putting
+// each half into a string. Makes the assumption that the length of each line is divisble by two.
+// In hindsight, this could have been a tuple struct containing u8 slices since we're only
+// concerned about ASCII characters here.
+//
+// Part 1: Gets both halves of the rucksack, converts them into bytes (since we are only concerned
+// about ASCII characters), and checks for intersections between the two sides using iterators. We
+// get the priority by doing some math on ASCII character values, which conveniently line up with
+// the specifications for priority.
+//
+// Part 2: Gets three rucksacks from the input, combines their halves together, and essentially
+// uses the same method for determining intersections as part 1, except we do it on the first and
+// second rucksack, and compare that intersection with the third to find what the intersection is
+// between all three.
+//
 fn get_priority(character: u8) -> u8 {
     if character > 97 {
         character - 96

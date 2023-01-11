@@ -1,4 +1,30 @@
-use std::{rc::{Rc, Weak}, cell::RefCell};
+// Day 7: No Space Left On Device - https://adventofcode.com/2022/day/7
+//
+// Generator: Oh gosh... First, parses the input, having two states for reading new commands or
+// reading the output of an previous command. We create a fake root, and add a folder '/' to it,
+// since the first command of the input is switching to this folder. We make the assumption that we
+// will never try to switch directory to a directory that hasn't been seen before. We create and
+// add new files to the file system based on the output of 'ls'. The filesystem is a tree
+// implementation, which in Rust is kinda difficult due to its self-referential nature... but this
+// implementation seems to work.
+//
+// Part 1: First, we define a function that gets the size of a directory and all its subdirectories
+// by getting the total size of all files in the directory, and recursively repeating this until
+// there are no child directories left. Then, we recursively call this recursive function on every
+// directory, and return a list of sizes, which we eventually filter to get our final answer.
+// In hindsight, there are more assumptions we could have made about the input such that a less
+// generic implementation of this whole file system structure could be used, but I couldn't predict
+// what part 2 would entail, so I decided to just make it as generic as possible. I was very
+// disappointed that part 2 wasn't difficult at all...
+//
+// Part 2: Same thing, except we calculate the total size of the root directory, sort the list of
+// sizes, and find the first directory that is just big enough to free up the required amount of
+// space. Too easy, in comparision to the amount of effort it took for everything else...
+//
+use std::{
+    cell::RefCell,
+    rc::{Rc, Weak},
+};
 
 #[derive(Clone, Debug)]
 pub enum FileSystemElement {
@@ -8,12 +34,18 @@ pub enum FileSystemElement {
 
 impl FileSystemElement {
     fn file(&self) -> Result<&File, ()> {
-        if let FileSystemElement::File(f) = self { Ok(f) }
-        else { Err(()) }
+        if let FileSystemElement::File(f) = self {
+            Ok(f)
+        } else {
+            Err(())
+        }
     }
     fn directory(&self) -> Result<Rc<RefCell<Directory>>, ()> {
-        if let FileSystemElement::Directory(d) = self { Ok(d.clone()) }
-        else { Err(()) }
+        if let FileSystemElement::Directory(d) = self {
+            Ok(d.clone())
+        } else {
+            Err(())
+        }
     }
 }
 
@@ -33,12 +65,19 @@ pub struct Directory {
 impl Directory {
     // Add a new file to the directory
     fn add_file(&mut self, name: &str, size: u32) {
-        let file = File { name: name.to_owned(), size };
+        let file = File {
+            name: name.to_owned(),
+            size,
+        };
         self.contents.push(FileSystemElement::File(file));
     }
 
     // Add a new directory to the directory
-    fn add_directory(&mut self, name: &str, parent: Option<Rc<RefCell<Directory>>>) -> Rc<RefCell<Directory>> {
+    fn add_directory(
+        &mut self,
+        name: &str,
+        parent: Option<Rc<RefCell<Directory>>>,
+    ) -> Rc<RefCell<Directory>> {
         let parent_ref = parent.map(|d| Rc::downgrade(&d));
 
         let directory = Rc::new(RefCell::new(Directory {
@@ -70,29 +109,23 @@ impl Directory {
 
     // Get a list of files in the directory
     fn get_files(&self) -> Vec<&File> {
-        self.contents
-            .iter()
-            .filter_map(|x| x.file().ok())
-            .collect()
+        self.contents.iter().filter_map(|x| x.file().ok()).collect()
     }
 
     // Get the total size of all of the files in this directory
     fn get_content_file_size(&self) -> u32 {
-        self.get_files()
-            .into_iter()
-            .map(|x| x.size)
-            .sum()
+        self.get_files().into_iter().map(|x| x.size).sum()
     }
 
-    // Get the total size of the directory, including the size of any sub-directories 
+    // Get the total size of the directory, including the size of any sub-directories
     fn get_total_size(&self) -> u32 {
-        // Get size of all files in current directory 
+        // Get size of all files in current directory
         let mut current_size = self.get_content_file_size();
 
-        // Get children 
+        // Get children
         let children = self.get_child_directories();
 
-        // Return file size only if we have no child directories 
+        // Return file size only if we have no child directories
         if children.is_empty() {
             current_size
         }
@@ -108,7 +141,7 @@ impl Directory {
     // Call get_total_size on every child directory found, recursively
     fn get_all_total_sizes<'a>(&'a self, overall: &'a mut Vec<u32>) -> &'a mut Vec<u32> {
         let children = self.get_child_directories();
-        if !children.is_empty(){
+        if !children.is_empty() {
             for child in &children {
                 child.borrow().get_all_total_sizes(overall);
             }
@@ -121,8 +154,7 @@ impl Directory {
     fn get_parent_directory(&self) -> Option<Rc<RefCell<Directory>>> {
         if let Some(p) = &self.parent {
             p.upgrade()
-        }
-        else {
+        } else {
             None
         }
     }
@@ -141,51 +173,59 @@ pub fn get_root_directory(input_lines: &[String]) -> Rc<RefCell<Directory>> {
 
     // We want to keep this reference alive so the rest of the tree structure doesn't get dereffed
     // when we traverse nodes
-    let root_dir = active_directory.borrow_mut(). add_directory("/", None);
+    let root_dir = active_directory.borrow_mut().add_directory("/", None);
 
     let mut state = ReaderState::ReadCommandInput;
 
     for line in input_lines {
-            let command_args = line.split(' ').collect::<Vec<&str>>();
-            if command_args.first().unwrap().eq(&"$") { state = ReaderState::ReadCommandInput };
-            match state {
-                ReaderState::ReadCommandInput => {
-                    let (command, argument) = (command_args.get(1).unwrap(), command_args.get(2).unwrap_or(&""));
-                    match *command {
-                        "ls" => state = ReaderState::ReadCommandOutput,
-                        "cd" => {
-                            if argument.eq(&"..") { 
-                                let active_borrow = active_directory.borrow().get_parent_directory().clone();
-                                active_directory = active_borrow.unwrap();
-                            }
-                            else {
-                                let new_directory = active_directory.borrow().get_directory_by_name(argument).clone();
-                                active_directory = new_directory;
-                            }
+        let command_args = line.split(' ').collect::<Vec<&str>>();
+        if command_args.first().unwrap().eq(&"$") {
+            state = ReaderState::ReadCommandInput
+        };
+        match state {
+            ReaderState::ReadCommandInput => {
+                let (command, argument) = (
+                    command_args.get(1).unwrap(),
+                    command_args.get(2).unwrap_or(&""),
+                );
+                match *command {
+                    "ls" => state = ReaderState::ReadCommandOutput,
+                    "cd" => {
+                        if argument.eq(&"..") {
+                            let active_borrow =
+                                active_directory.borrow().get_parent_directory().clone();
+                            active_directory = active_borrow.unwrap();
+                        } else {
+                            let new_directory = active_directory
+                                .borrow()
+                                .get_directory_by_name(argument)
+                                .clone();
+                            active_directory = new_directory;
                         }
-                        _ => (),
                     }
-                },
-
-                ReaderState::ReadCommandOutput => {
-                    let (arg1, name) = (command_args.first().unwrap(), command_args.get(1).unwrap());
-                    // A new file
-                    if let Ok(size) = arg1.parse::<u32>() {
-                        active_directory.borrow_mut().add_file(name, size);
-                    }
-                    // A new directory
-                    else {
-                        active_directory.borrow_mut().add_directory(name, Some(active_directory.clone()));
-                    }
+                    _ => (),
                 }
-
             }
+
+            ReaderState::ReadCommandOutput => {
+                let (arg1, name) = (command_args.first().unwrap(), command_args.get(1).unwrap());
+                // A new file
+                if let Ok(size) = arg1.parse::<u32>() {
+                    active_directory.borrow_mut().add_file(name, size);
+                }
+                // A new directory
+                else {
+                    active_directory
+                        .borrow_mut()
+                        .add_directory(name, Some(active_directory.clone()));
+                }
+            }
+        }
     }
     root_dir
 }
 #[aoc_generator(day7)]
-pub fn input_generator(input: &str) -> Vec<String>
-{
+pub fn input_generator(input: &str) -> Vec<String> {
     input.lines().map(|x| x.to_owned()).collect()
 }
 
@@ -195,7 +235,11 @@ pub fn solver_part1(input: &[String]) -> u32 {
     let borrowed_root = root.borrow();
     let mut total_sizes_result = Vec::new();
     let total_sizes_vec = borrowed_root.get_all_total_sizes(&mut total_sizes_result);
-    let result: u32 = total_sizes_vec.iter().copied().filter(|x| x <= &100_000).sum();
+    let result: u32 = total_sizes_vec
+        .iter()
+        .copied()
+        .filter(|x| x <= &100_000)
+        .sum();
     result
 }
 
@@ -213,8 +257,12 @@ pub fn solver_part2(input: &[String]) -> u32 {
     println!("current free: {current_free_space:}, space to free: {space_to_free:}");
     let mut total_sizes_result = Vec::new();
     let total_sizes_vec = borrowed_root.get_all_total_sizes(&mut total_sizes_result);
-    total_sizes_vec.sort_unstable(); 
-    total_sizes_vec.iter().copied().find(|x| x >= &space_to_free).unwrap()
+    total_sizes_vec.sort_unstable();
+    total_sizes_vec
+        .iter()
+        .copied()
+        .find(|x| x >= &space_to_free)
+        .unwrap()
 }
 
 #[cfg(test)]
@@ -254,7 +302,11 @@ $ ls
         let mut size_vec = Vec::new();
         let all_total_sizes = borrowed_root.get_all_total_sizes(&mut size_vec);
         println!("computed total sizes: {all_total_sizes:?}");
-        let filtered_and_summed: u32 = all_total_sizes.iter().copied().filter(|x| x <= &100_000).sum();
+        let filtered_and_summed: u32 = all_total_sizes
+            .iter()
+            .copied()
+            .filter(|x| x <= &100_000)
+            .sum();
         println!("filtered result: {filtered_and_summed:?}");
         assert_eq!(filtered_and_summed, 95437);
     }

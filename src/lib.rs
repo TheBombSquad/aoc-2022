@@ -1,4 +1,4 @@
-#![allow(clippy::missing_panics_doc)] 
+#![allow(clippy::missing_panics_doc)]
 extern crate aoc_runner;
 #[macro_use]
 extern crate aoc_runner_derive;
